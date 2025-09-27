@@ -1,0 +1,45 @@
+{
+  "name": "pay-as-you-consume",
+  "version": "1.0.0",
+  "description": "A DeFi-powered pay-per-use wallet system where users deposit tokens into a yield vault and use earned yield for micropayments",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "test": "npm run test --workspace=frontend && npm run test --workspace=backend && cd contracts && forge test",
+    "test:frontend": "npm run test --workspace=frontend",
+    "test:backend": "npm run test --workspace=backend",
+    "test:contracts": "cd contracts && forge test",
+    "forge:build": "cd contracts && forge build",
+    "forge:test": "cd contracts && forge test",
+    "forge:deploy": "cd contracts && forge script script/Deploy.s.sol:Deploy --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast",
+    "forge:verify": "cd contracts && forge verify-contract",
+    "clean": "npm run clean --workspace=frontend && npm run clean --workspace=backend && cd contracts && forge clean"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "keywords": [
+    "defi",
+    "micropayments",
+    "web3",
+    "ethereum",
+    "yield-farming",
+    "erc4626",
+    "aave"
+  ],
+  "author": "raymax0x",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:raymax0x/pay-as-you-consume.git"
+  }
+}
