@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Content {
+  id           String @id @default(cuid())
+  contentId    String @unique // bytes32 from smart contract
+  title        String
+  description  String?
+  fullPrice    String // Price in wei (BigInt as string)
+  totalDuration Int   // Duration in seconds
+  category     String?
+  thumbnailUrl String?
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  sessions Session[]
+
+  @@map("contents")
+}
+
+model Session {
+  id              String        @id @default(cuid())
+  sessionId       String        @unique @default(cuid()) // Unique session identifier
+  userAddress     String
+  contentId       String
+
+  // Session state
+  status          SessionStatus @default(ACTIVE)
+  startTime       DateTime
+  endTime         DateTime?
+  pausedAt        DateTime?
+  resumedAt       DateTime?
+
+  // Duration tracking (in seconds)
+  totalDuration   Int           @default(0)
+  pausedDuration  Int           @default(0)
+  activeDuration  Int           @default(0)
+
+  // Cost tracking (in wei as strings for precision)
+  estimatedCost   String        @default("0")
+  finalCost       String?
+  paidFromYield   String        @default("0")
+  paidFromPrincipal String      @default("0")
+
+  // Blockchain data
+  txHash          String?       // Transaction hash when payment is made
+  blockNumber     Int?          // Block number of payment transaction
+  gasUsed         String?       // Gas used for transaction
+
+  // Metadata
+  userAgent       String?
+  ipAddress       String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user            User          @relation(fields: [userAddress], references: [address])
+  content         Content       @relation(fields: [contentId], references: [contentId])
+
+  @@map("sessions")
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+model Contract {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  address           String   @unique
+  network           String   // mainnet, sepolia, etc.
+  deploymentBlock   Int?
+  abi               Json?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("contracts")
+}
+
+model SystemMetrics {
+  id              String   @id @default(cuid())
+  date            DateTime @unique @default(now())
+
+  // Daily metrics
+  totalSessions   Int      @default(0)
+  activeSessions  Int      @default(0)
+  totalRevenue    String   @default("0") // in wei
+  totalUsers      Int      @default(0)
+  newUsers        Int      @default(0)
+
+  // Performance metrics
+  avgSessionDuration Float @default(0)
+  avgCostPerSession  String @default("0")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("system_metrics")
+}
