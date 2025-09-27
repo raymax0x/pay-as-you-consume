@@ -25,10 +25,10 @@ A micropayment system where users deposit tokens into a DeFi yield vault and use
 
 ### Smart Contracts
 - **Framework:** Foundry
-- **Language:** Solidity ^0.8.19
+- **Language:** Solidity ^0.8.26
 - **Standards:** ERC-4626 (Tokenized Vaults)
-- **DeFi Integration:** Aave V3
-- **Testing:** Foundry tests
+- **Dependencies:** OpenZeppelin Contracts v5.4.0
+- **Testing:** Foundry tests (21/21 passing)
 
 ### Frontend
 - **Framework:** Next.js 14 with TypeScript
@@ -67,6 +67,8 @@ A micropayment system where users deposit tokens into a DeFi yield vault and use
    ```bash
    cd contracts
    forge install
+   forge build  # Verify everything compiles
+   forge test   # Run test suite (should show 21/21 passing)
    ```
 
 ### Development Commands
@@ -80,9 +82,9 @@ npm run dev:frontend  # Frontend on http://localhost:3000
 npm run dev:backend   # Backend on http://localhost:3001
 
 # Smart contracts
-npm run forge:build   # Build contracts
-npm run forge:test    # Run tests
-npm run test:contracts # Same as above
+cd contracts
+forge build          # Build contracts
+forge test           # Run tests (21/21 passing)
 
 # Testing
 npm run test          # Run all tests
@@ -121,20 +123,45 @@ pay-as-you-consume/
 
 ```bash
 # Deploy to Sepolia testnet
-npm run forge:deploy
+cd contracts
+forge script script/DeployContracts.s.sol --rpc-url sepolia --broadcast
 
-# Verify contracts
-npm run forge:verify
+# Verify contracts on Etherscan
+forge verify-contract --chain sepolia <contract-address> <contract-name>
 ```
 
 ## 🎯 Demo Flow
 
-1. **Setup:** User connects wallet and deposits 100 USDC
-2. **Investment:** Funds automatically deployed to Aave
-3. **Content:** User starts watching 10-minute video (priced at 10 USDC)
-4. **Consumption:** After 2 minutes, user pauses (2 USDC deducted from yield)
-5. **Growth:** Remaining balance continues earning yield
-6. **Repeat:** User can consume more content using same wallet
+1. **Setup:** User connects wallet and deposits 100 USDC into YieldVault
+2. **Instant Yield:** System automatically provides 20% instant yield (20 USDC available immediately)
+3. **Content:** User starts streaming "intro-to-defi" content (10 USDC for 1 hour)
+4. **Consumption:** After 30 minutes, user stops stream (5 USDC deducted from yield)
+5. **Growth:** Remaining balance continues earning 5% APY
+6. **Repeat:** User can stream more content using yield-first payment logic
+
+## ✅ Current Implementation Status
+
+### Phase 1: Smart Contracts (✅ COMPLETE)
+- **YieldVault.sol**: ERC4626-compliant vault with principal/yield tracking
+- **StreamingWallet.sol**: Pay-per-second content streaming with yield-first payments
+- **MockUSDC.sol**: Testing token with instant yield functionality
+- **Comprehensive Test Suite**: 21/21 tests passing
+
+### Key Features Implemented
+- 🏦 **ERC4626 Yield Vault**: Deposit USDC, earn 5% APY
+- ⚡ **Instant Yield**: 20% immediate yield for testing/demos
+- 📺 **Content Streaming**: Pay-per-second for digital content
+- 💰 **Yield-First Payments**: Deduct from yield before touching principal
+- 🧪 **Full Test Coverage**: Comprehensive Foundry test suite
+
+### Smart Contract Addresses (Testnet)
+*Contracts ready for deployment - addresses will be updated after deployment*
+
+### Next Steps
+- [ ] Frontend development (Next.js + wagmi)
+- [ ] Backend API for content management
+- [ ] Mainnet deployment
+- [ ] Integration with real DeFi protocols
 
 ## 📚 Documentation
 

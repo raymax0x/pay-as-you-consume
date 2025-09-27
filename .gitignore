@@ -102,3 +102,10 @@ Thumbs.db
 # Temporary folders
 tmp/
 temp/
+
+# Claude Code related files
+CLAUDE.md
+.claude/
+claude-conversations/
+.claude-context
+claude-code.json
