@@ -10,5 +10,7 @@ remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "forge-std/=lib/forge-std/src/",
 ]
+# Allow write access to deployments directory for deployment scripts
+fs_permissions = [{ access = "read-write", path = "./deployments" }]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
