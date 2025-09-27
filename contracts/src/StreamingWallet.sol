@@ -1,22 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.26;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-
-/**
- * @title IERC4626
- * @dev Minimal interface for an ERC4626 Vault.
- * We only need the `withdraw` function for this contract, but also include
- * others for context and potential future use. The `withdraw` function
- * allows this contract (the "owner" of the approval) to pull funds from
- * a user's vault balance on their behalf.
- */
-interface IERC4626 {
-    function asset() external view returns (address);
-    function totalAssets() external view returns (uint256);
-    function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares);
-    function decimals() external view returns (uint8);
-}
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 /**
  * @title IYieldVault
