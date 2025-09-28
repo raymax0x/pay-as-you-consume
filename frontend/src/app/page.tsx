@@ -1,151 +1,106 @@
 'use client';
 
 import { useState } from 'react';
-import { WalletConnection } from '../components/WalletConnection';
-import { UserBalance } from '../components/UserBalance';
-import { ContentCatalog } from '../components/ContentCatalog';
-import { ModernVideoPlayer } from '../components/ModernVideoPlayer';
-import { NetworkStatus } from '../components/NetworkStatus';
-import { NetworkSwitcher } from '../components/NetworkSwitcher';
-
-interface ContentInfo {
-  id: string;
-  contentId: string;
-  title: string;
-  description: string;
-  fullPrice: string;
-  totalDuration: number;
-  category: string;
-  thumbnailUrl?: string;
-  videoUrl?: string;
-  isActive: boolean;
-  createdAt: string;
-}
+import { WalletConnectButton } from "../components/WalletConnectButton";
+import { UserBalance } from "../components/UserBalance";
+import { QuickActions } from "../components/QuickActions";
+import { StreamingSession } from "../components/StreamingSession";
+import { RealTimeMetering } from "../components/RealTimeMetering";
+import { SAMPLE_CONTENT } from "../contracts/config";
 
 export default function Home() {
-  const [selectedContent, setSelectedContent] = useState<ContentInfo | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<bigint | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState(false);
+
+  const handleSessionStart = (sessionId: bigint) => {
+    setActiveSessionId(sessionId);
+    setIsSessionActive(true);
+  };
 
   return (
-    <div className="min-h-screen bg-black">
-      <NetworkSwitcher />
-      {/* Header */}
-      <header className="fixed top-0 w-full bg-black/80 backdrop-blur-md border-b border-gray-800 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">P</span>
-              </div>
-              <h1 className="text-xl font-semibold text-white">
-                PayStream
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <NetworkStatus />
-              <UserBalance />
-              <WalletConnection />
-            </div>
+    <div className="font-sans min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header with Wallet Connection */}
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-blue-600">
+              Pay-As-You-Consume
+            </h1>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              DeFi Wallet
+            </span>
           </div>
+          <WalletConnectButton />
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="pt-16">
-        {/* Hero Section with Video Player */}
-        <div className="relative">
-          {selectedContent ? (
-            <div className="relative w-full">
-              <ModernVideoPlayer content={selectedContent} />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/50 to-transparent p-8">
-                <div className="max-w-7xl mx-auto">
-                  <div className="flex items-end justify-between">
-                    <div className="max-w-2xl">
-                      <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                        {selectedContent.title}
-                      </h1>
-                      <p className="text-lg text-gray-300 mb-6">
-                        {selectedContent.description}
-                      </p>
-                      <div className="flex items-center space-x-6 text-sm text-gray-400">
-                        <span className="bg-red-600 text-white px-2 py-1 rounded text-xs">
-                          {selectedContent.category}
-                        </span>
-                        <span>{Math.floor(selectedContent.totalDuration / 60)}m</span>
-                        <span>{(parseInt(selectedContent.fullPrice) / 1000000).toFixed(2)} USDC</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="relative h-[70vh] bg-gradient-to-br from-gray-900 via-black to-purple-900">
-              <div className="absolute inset-0 bg-black/40"></div>
-              <div className="relative z-10 flex items-center justify-center h-full">
-                <div className="text-center max-w-3xl mx-auto px-6">
-                  <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
-                    Stream & Earn
-                  </h1>
-                  <p className="text-xl text-gray-300 mb-8">
-                    Pay only for what you watch. Earn yield while you stream.
-                  </p>
-                  <div className="flex justify-center">
-                    <div className="w-24 h-24 border border-gray-600 rounded-full flex items-center justify-center cursor-pointer hover:border-white transition-all">
-                      <div className="w-0 h-0 border-l-8 border-r-0 border-t-6 border-b-6 border-l-white border-t-transparent border-b-transparent ml-1"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+      <main className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Balance and Actions */}
+          <div className="space-y-6">
+            <UserBalance />
+            <QuickActions />
+          </div>
 
-        {/* Content Grid */}
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <ContentCatalog
-            onSelectContent={setSelectedContent}
-            selectedContent={selectedContent || undefined}
-          />
-        </div>
+          {/* Center Column - Streaming Session */}
+          <div className="space-y-6">
+            <StreamingSession onSessionStart={handleSessionStart} />
+            {activeSessionId && (
+              <RealTimeMetering
+                sessionId={activeSessionId}
+                isActive={isSessionActive}
+                pricePerSecond={SAMPLE_CONTENT.pricePerSecond}
+              />
+            )}
+          </div>
 
-        {/* Features Section */}
-        <div className="bg-gray-900 py-16">
-          <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-3xl font-bold text-white text-center mb-12">
-              How it works
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">💸</span>
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Yield-First Payments</h3>
-                <p className="text-gray-400">
-                  Pay with your yield earnings first, preserving your principal deposit
-                </p>
+          {/* Right Column - Info Cards */}
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">⏱️</span>
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Pay-Per-Second</h3>
-                <p className="text-gray-400">
-                  Fair pricing based on actual consumption time, not fixed subscriptions
-                </p>
+              <h3 className="text-xl font-semibold mb-2">Yield Vault</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Deposit USDT and earn 5% APY. Use generated yield for streaming payments while preserving your principal.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10v4a2 2 0 002 2h2a2 2 0 002-2v-4M9 10V8a2 2 0 012-2h2a2 2 0 012 2v2" />
+                </svg>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">🏦</span>
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">DeFi Integration</h3>
-                <p className="text-gray-400">
-                  Your deposits earn 5% APY while you enjoy premium content
-                </p>
+              <h3 className="text-xl font-semibold mb-2">Stream Content</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Pay per second for content consumption. Pause, resume, and only pay for what you actually watch.
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
+              <h3 className="text-xl font-semibold mb-2">Yield First</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Payments deducted from yield first, protecting your principal investment while maximizing utility.
+              </p>
             </div>
           </div>
         </div>
       </main>
+
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 mt-8">
+        <div className="max-w-7xl mx-auto text-center text-sm text-gray-500 dark:text-gray-400">
+          <p>Built with Next.js, Wagmi, and RainbowKit • Powered by DeFi</p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -13,4 +13,8 @@ remappings = [
 # Allow write access to deployments directory for deployment scripts
 fs_permissions = [{ access = "read-write", path = "./deployments" }]
 
+# Load environment variables from .env file
+[profile.default.env]
+FOUNDRY_ETH_RPC_URL = "${RPC_URL}"
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

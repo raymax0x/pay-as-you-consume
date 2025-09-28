@@ -1,0 +1,14 @@
+# Simple Deployment Commands
+
+# 1. Copy environment file
+# cp env.example .env
+
+# 2. Edit .env file with your configuration
+# Set PRIVATE_KEY and RPC_URL
+
+# 3. Deploy contracts
+# forge script script/Deploy.s.sol:Deploy --rpc-url $RPC_URL --broadcast --verify -vvvv
+
+# 4. Check deployment results
+# cat deployments/31337.json
+# cat deployments/.env.contracts

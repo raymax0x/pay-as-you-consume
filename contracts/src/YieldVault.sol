@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "./MockUSDT.sol";
 
 /**
  * @title YieldVault
@@ -91,13 +92,11 @@ contract YieldVault is ERC4626, Ownable {
     }
 
     /**
-     * @notice Simulates yield for a user (for testing purposes)
-     * @param user The address of the user
+     * @notice Simulates yield for testing purposes by directly increasing totalAssets
      * @param amount The amount of yield to simulate
-     * @dev This function is used by MockUSDC to instantly provide yield for testing
+     * @dev This function adds yield to the vault for testing purposes
      */
-    function simulateYield(address user, uint256 amount) external {
-        require(msg.sender == address(asset()), "YieldVault: Only MockUSDC can simulate yield");
+    function simulateYield(uint256 amount) external onlyOwner {
 
         // Increase the accumulated yield per share
         if (totalSupply() > 0) {
@@ -105,8 +104,8 @@ contract YieldVault is ERC4626, Ownable {
             accumulatedYieldPerShare += yieldPerShare;
         }
 
-        // Transfer the yield tokens to this contract
-        IERC20(asset()).transferFrom(msg.sender, address(this), amount);
+        // Mint the yield tokens directly to this contract for testing
+        MockUSDT(address(asset())).mint(address(this), amount);
     }
 
     //================================================================

@@ -1,215 +1,207 @@
 'use client';
 
-import { useReadContract, useWriteContract, useAccount, useChainId } from 'wagmi';
-import { formatUnits, parseUnits, keccak256, toHex } from 'viem';
-import { YieldVaultABI, StreamingWalletABI, MockUSDCABI } from '../config/abis';
-import { getContractAddress } from '../config/contracts';
+import { useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { Address, formatUnits, parseUnits } from 'viem';
+import { getContractAddress, USDT_DECIMALS } from '../contracts/config';
 
-export function useYieldVault() {
-  const { address } = useAccount();
+// Import ABIs
+import MockUSDTABI from '../contracts/abi/MockUSDT.json';
+import YieldVaultABI from '../contracts/abi/YieldVault.json';
+import StreamingWalletV2ABI from '../contracts/abi/StreamingWalletV2.json';
+
+export function useContracts() {
   const chainId = useChainId();
-  const contractAddress = getContractAddress(chainId, 'YieldVault');
 
-  const { data: principalBalance, refetch: refetchPrincipal } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: YieldVaultABI,
-    functionName: 'principalOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address && !!contractAddress }
-  });
-
-  const { data: yieldBalance, refetch: refetchYield } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: YieldVaultABI,
-    functionName: 'yieldOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address && !!contractAddress }
-  });
-
-  const { data: vaultShares, refetch: refetchShares } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: YieldVaultABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address && !!contractAddress }
-  });
-
-  const { writeContract: withdraw } = useWriteContract();
-
-  const refetchAll = () => {
-    refetchPrincipal();
-    refetchYield();
-    refetchShares();
-  };
-
-  const withdrawFromVault = async (amount: bigint) => {
-    if (!address || !contractAddress) throw new Error('Not connected');
-
-    return withdraw({
-      address: contractAddress as `0x${string}`,
+  const contracts = {
+    mockUSDT: {
+      address: getContractAddress(chainId, 'mockUSDT'),
+      abi: MockUSDTABI,
+    },
+    yieldVault: {
+      address: getContractAddress(chainId, 'yieldVault'),
       abi: YieldVaultABI,
-      functionName: 'withdraw',
-      args: [amount, address, address]
-    });
+    },
+    streamingWalletV2: {
+      address: getContractAddress(chainId, 'streamingWalletV2'),
+      abi: StreamingWalletV2ABI,
+    },
   };
 
-  return {
-    principalBalance: principalBalance ? formatUnits(principalBalance as bigint, 6) : '0',
-    yieldBalance: yieldBalance ? formatUnits(yieldBalance as bigint, 6) : '0',
-    totalBalance: principalBalance && yieldBalance
-      ? formatUnits((principalBalance as bigint) + (yieldBalance as bigint), 6)
-      : '0',
-    vaultShares: vaultShares ? formatUnits(vaultShares as bigint, 18) : '0',
-    withdrawFromVault,
-    refetchAll,
-    isConnected: !!address && !!contractAddress
-  };
+  return contracts;
 }
 
-export function useStreamingWallet() {
-  const { address } = useAccount();
-  const chainId = useChainId();
-  const contractAddress = getContractAddress(chainId, 'StreamingWallet');
+// Hook for USDT operations
+export function useUSDT() {
+  const contracts = useContracts();
+  const { writeContract } = useWriteContract();
 
-  const { writeContract: writeStream } = useWriteContract();
-
-  const getContentId = (contentIdString: string) => {
-    return keccak256(toHex(contentIdString));
-  };
-
-  const startStream = async (contentId: string) => {
-    if (!address || !contractAddress) throw new Error('Not connected');
-
-    const contentIdBytes = getContentId(contentId);
-    return writeStream({
-      address: contractAddress as `0x${string}`,
-      abi: StreamingWalletABI,
-      functionName: 'startStream',
-      args: [contentIdBytes]
-    });
-  };
-
-  const pauseStream = async (contentId: string) => {
-    if (!address || !contractAddress) throw new Error('Not connected');
-
-    const contentIdBytes = getContentId(contentId);
-    return writeStream({
-      address: contractAddress as `0x${string}`,
-      abi: StreamingWalletABI,
-      functionName: 'pauseStream',
-      args: [contentIdBytes]
-    });
-  };
-
-  const stopStream = async (contentId: string) => {
-    if (!address || !contractAddress) throw new Error('Not connected');
-
-    const contentIdBytes = getContentId(contentId);
-    return writeStream({
-      address: contractAddress as `0x${string}`,
-      abi: StreamingWalletABI,
-      functionName: 'stopStream',
-      args: [contentIdBytes]
-    });
-  };
-
-  const getUserSession = (contentId: string) => {
-    if (!address || !contractAddress) return null;
-
-    const contentIdBytes = getContentId(contentId);
-    return useReadContract({
-      address: contractAddress as `0x${string}`,
-      abi: StreamingWalletABI,
-      functionName: 'userSessions',
-      args: [address, contentIdBytes],
-      query: { enabled: !!address && !!contractAddress }
-    });
-  };
-
-  const getCurrentCost = (contentId: string) => {
-    if (!address || !contractAddress) return null;
-
-    const contentIdBytes = getContentId(contentId);
-    return useReadContract({
-      address: contractAddress as `0x${string}`,
-      abi: StreamingWalletABI,
-      functionName: 'getCurrentCost',
-      args: [address, contentIdBytes],
-      query: { enabled: !!address && !!contractAddress, refetchInterval: 1000 }
-    });
-  };
-
-  const getContentInfo = (contentId: string) => {
-    if (!contractAddress) return null;
-
-    const contentIdBytes = getContentId(contentId);
-    return useReadContract({
-      address: contractAddress as `0x${string}`,
-      abi: StreamingWalletABI,
-      functionName: 'contentInfo',
-      args: [contentIdBytes],
-      query: { enabled: !!contractAddress }
-    });
-  };
-
-  return {
-    startStream,
-    pauseStream,
-    stopStream,
-    getUserSession,
-    getCurrentCost,
-    getContentInfo,
-    getContentId,
-    isConnected: !!address && !!contractAddress
-  };
-}
-
-export function useMockUSDC() {
-  const { address } = useAccount();
-  const chainId = useChainId();
-  const contractAddress = getContractAddress(chainId, 'MockUSDC');
-
-  const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: MockUSDCABI,
+  const balanceOf = (address: Address) => useReadContract({
+    ...contracts.mockUSDT,
     functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address && !!contractAddress }
+    args: [address],
   });
 
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: contractAddress as `0x${string}`,
-    abi: MockUSDCABI,
-    functionName: 'allowance',
-    args: address && getContractAddress(chainId, 'StreamingWallet')
-      ? [address, getContractAddress(chainId, 'StreamingWallet') as `0x${string}`]
-      : undefined,
-    query: { enabled: !!address && !!contractAddress }
-  });
+  const publicMint = async (amount: bigint) => {
+    return writeContract({
+      ...contracts.mockUSDT,
+      functionName: 'publicMint',
+      args: [amount],
+    });
+  };
 
-  const { writeContract: approve } = useWriteContract();
-
-  const approveStreamingWallet = async (amount: string) => {
-    if (!address || !contractAddress) throw new Error('Not connected');
-
-    const streamingWalletAddress = getContractAddress(chainId, 'StreamingWallet');
-    if (!streamingWalletAddress) throw new Error('StreamingWallet not found');
-
-    const amountWei = parseUnits(amount, 6);
-    return approve({
-      address: contractAddress as `0x${string}`,
-      abi: MockUSDCABI,
+  const approve = async (spender: Address, amount: bigint) => {
+    return writeContract({
+      ...contracts.mockUSDT,
       functionName: 'approve',
-      args: [streamingWalletAddress as `0x${string}`, amountWei]
+      args: [spender, amount],
     });
   };
 
   return {
-    balance: balance ? formatUnits(balance as bigint, 6) : '0',
-    allowance: allowance ? formatUnits(allowance as bigint, 6) : '0',
-    approveStreamingWallet,
-    refetchBalance,
-    refetchAllowance,
-    isConnected: !!address && !!contractAddress
+    ...contracts.mockUSDT,
+    balanceOf,
+    publicMint,
+    approve,
   };
+}
+
+// Hook for Yield Vault operations
+export function useYieldVault() {
+  const contracts = useContracts();
+  const { writeContract } = useWriteContract();
+
+  const balanceOf = (address: Address) => useReadContract({
+    ...contracts.yieldVault,
+    functionName: 'balanceOf',
+    args: [address],
+  });
+
+  const principalOf = (address: Address) => useReadContract({
+    ...contracts.yieldVault,
+    functionName: 'principalOf',
+    args: [address],
+  });
+
+  const yieldOf = (address: Address) => useReadContract({
+    ...contracts.yieldVault,
+    functionName: 'yieldOf',
+    args: [address],
+  });
+
+  const totalAssets = () => useReadContract({
+    ...contracts.yieldVault,
+    functionName: 'totalAssets',
+    args: [],
+  });
+
+  const deposit = async (assets: bigint, receiver: Address) => {
+    return writeContract({
+      ...contracts.yieldVault,
+      functionName: 'deposit',
+      args: [assets, receiver],
+    });
+  };
+
+  const withdraw = async (assets: bigint, receiver: Address, owner: Address) => {
+    return writeContract({
+      ...contracts.yieldVault,
+      functionName: 'withdraw',
+      args: [assets, receiver, owner],
+    });
+  };
+
+  return {
+    ...contracts.yieldVault,
+    balanceOf,
+    principalOf,
+    yieldOf,
+    totalAssets,
+    deposit,
+    withdraw,
+  };
+}
+
+// Hook for Streaming Wallet operations
+export function useStreamingWallet() {
+  const contracts = useContracts();
+  const { writeContract } = useWriteContract();
+
+  const getSession = (sessionId: bigint) => useReadContract({
+    ...contracts.streamingWalletV2,
+    functionName: 'getSession',
+    args: [sessionId],
+  });
+
+  const getCurrentConsumedTime = (sessionId: bigint) => useReadContract({
+    ...contracts.streamingWalletV2,
+    functionName: 'getCurrentConsumedTime',
+    args: [sessionId],
+  });
+
+  const getCurrentAmountOwed = (sessionId: bigint) => useReadContract({
+    ...contracts.streamingWalletV2,
+    functionName: 'getCurrentAmountOwed',
+    args: [sessionId],
+  });
+
+  const getUserActiveSessions = (user: Address) => useReadContract({
+    ...contracts.streamingWalletV2,
+    functionName: 'getUserActiveSessions',
+    args: [user],
+  });
+
+  const startSession = async (contentId: string, pricePerSecond: bigint) => {
+    const contentIdBytes = `0x${Buffer.from(contentId).toString('hex').padEnd(64, '0')}` as `0x${string}`;
+    return writeContract({
+      ...contracts.streamingWalletV2,
+      functionName: 'startSession',
+      args: [contentIdBytes, pricePerSecond],
+    });
+  };
+
+  const pauseSession = async (sessionId: bigint) => {
+    return writeContract({
+      ...contracts.streamingWalletV2,
+      functionName: 'pauseSession',
+      args: [sessionId],
+    });
+  };
+
+  const resumeSession = async (sessionId: bigint) => {
+    return writeContract({
+      ...contracts.streamingWalletV2,
+      functionName: 'resumeSession',
+      args: [sessionId],
+    });
+  };
+
+  const stopSession = async (sessionId: bigint, consumedSec: bigint) => {
+    return writeContract({
+      ...contracts.streamingWalletV2,
+      functionName: 'stopSession',
+      args: [sessionId, consumedSec],
+    });
+  };
+
+  return {
+    ...contracts.streamingWalletV2,
+    getSession,
+    getCurrentConsumedTime,
+    getCurrentAmountOwed,
+    getUserActiveSessions,
+    startSession,
+    pauseSession,
+    resumeSession,
+    stopSession,
+  };
+}
+
+// Utility function to format USDT amounts
+export function formatUSDT(amount: bigint): string {
+  return formatUnits(amount, USDT_DECIMALS);
+}
+
+// Utility function to parse USDT amounts
+export function parseUSDT(amount: string): bigint {
+  return parseUnits(amount, USDT_DECIMALS);
 }

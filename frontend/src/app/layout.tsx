@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Web3Provider } from "../providers/Web3Provider";
+import { Providers } from "../components/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Pay-As-You-Consume DeFi Wallet",
-  description: "A micropayment system where users deposit tokens into a DeFi yield vault and use the earned yield to pay only for what they consume.",
+  description: "A DeFi-powered pay-per-use wallet system where users deposit tokens into a yield vault and use earned yield for micropayments",
 };
 
 export default function RootLayout({
@@ -28,9 +28,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Web3Provider>
+        <Providers>
           {children}
-        </Web3Provider>
+        </Providers>
       </body>
     </html>
   );
